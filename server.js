@@ -1,7 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
-
+const cTable = require('console.table');
 
 const PORT = process.env.PORT || 3001;
 const app = express();
@@ -9,37 +9,104 @@ const app = express();
 // Connect to database
 const db = mysql.createConnection(
   {
-    host: 'localhost',node,
+    host: 'localhost',
     // Your MySQL username,
     user: 'root',
     // Your MySQL password
     password: 'password',
-    database: 'employee_tracker'
-  },
-  console.log('Connected to the employee_tracker database.')
+    database: 'employee_tracker'    
+  }
 );
 
-app.get('/home', (req, res) => {
-  res.json({
-    message: 'Hello World'
-  });
+db.connect(function(err) {
+  if (err) { 
+    throw err;
+  } else {
+    //console.log(db);
+  console.log(`Connected to the ${db.config.database} database.`)
+  startEmployeeTracker();
+  }
 });
 
+function startEmployeeTracker() {
+  inquirer
+    .prompt({
+      type: "list",
+      name: "choice",
+      message: "Select a view:",
+      choices: [
+        "View All Departments",
+        "View All Roles",
+        "View All Employees"
+      ]
+    })
+    .then(function(val) {
+      switch (val.choice){
+      case "View All Departments":
+        viewAllDepartments();
+        break;
+      
+      case "View All Roles":
+        viewAllRoles();
+        break;
 
-// Express middleware
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+      case "View All Employees":
+        viewAllEmployees();
+        break;
+    }
+    });
+}
 
 
+// View All Departments
+function viewAllDepartments() {
+  console.log("All Departments");
 
-// Default response for any other request (Not Found)
+  const sql = `SELECT id, name AS Department FROM department`;
 
-app.use((req, res) => {
-  res.status(404).end();
-});
+  db.query(sql, (err, res) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    console.table(res);
+    startEmployeeTracker();
+  }); 
+};
 
+// // View All Roles
+function viewAllRoles() {
+  console.log("All Roles");
 
+  const sql = `SELECT role.title AS Job_Title, 
+  role.id AS ID, 
+  department.name AS Department,
+  role.salary AS Salary 
+  FROM role LEFT JOIN department 
+  ON department_id = department.id;`;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+  db.query(sql, (err, res) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    console.table(res);
+    startEmployeeTracker();
+  }); 
+};
+
+// View All Employees
+function viewAllEmployees() {
+  console.log("All Employees");
+
+  const sql = `SELECT * FROM employee`;
+
+  db.query(sql, (err, res) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    console.table(res);
+    startEmployeeTracker();
+  }); 
+};
