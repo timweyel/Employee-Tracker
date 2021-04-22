@@ -22,7 +22,6 @@ db.connect(function(err) {
   if (err) { 
     throw err;
   } else {
-    //console.log(db);
   console.log(`Connected to the ${db.config.database} database.`)
   startEmployeeTracker();
   }
@@ -33,11 +32,13 @@ function startEmployeeTracker() {
     .prompt({
       type: "list",
       name: "choice",
-      message: "Select a view:",
+      message: "What would you like to do?",
       choices: [
         "View All Departments",
         "View All Roles",
-        "View All Employees"
+        "View All Employees",
+        "Add Department",
+        "Add Role"
       ]
     })
     .then(function(val) {
@@ -53,7 +54,16 @@ function startEmployeeTracker() {
       case "View All Employees":
         viewAllEmployees();
         break;
-    }
+
+      case "Add Department":
+        addDepartment();
+        break;
+
+      case "Add Role":
+        addRole();
+        break;
+      
+     }
     });
 }
 
@@ -62,7 +72,7 @@ function startEmployeeTracker() {
 function viewAllDepartments() {
   console.log("All Departments");
 
-  const sql = `SELECT id, name AS Department FROM department`;
+  const sql = `SELECT id, name AS Department FROM department ORDER BY id ASC`;
 
   db.query(sql, (err, res) => {
     if (err) {
@@ -106,8 +116,7 @@ function viewAllEmployees() {
       role.title, 
       department.name AS department, 
       role.salary, 
-      CONCAT(manager.first_name, ' ', manager.last_name) AS manager,
-      employee.manager_id
+      CONCAT(manager.first_name, ' ', manager.last_name) AS manager
     FROM employee
     LEFT JOIN role
       ON employee.role_id = role.id
@@ -123,5 +132,67 @@ function viewAllEmployees() {
     }
     console.table(res);
     startEmployeeTracker();
-  }); 
+  });
 };
+
+function addDepartment(){
+  inquirer
+    .prompt([
+      {
+        type: "input",
+        name: "name",
+        message: "Enter the Department Name: "
+      }
+    ]).then((res) => {
+    let sql = `INSERT INTO department SET ?`;
+    db.query(sql, [{name: res.name}],(err, res) => {
+      //TODO: try to put in some error handling here. add UNIQUE to schema. see error function below this function
+      if(err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      console.log('Department added successfully!');
+      viewAllDepartments();
+      startEmployeeTracker();
+    });
+  });
+}
+
+// function deptExistsException(msg) {
+//   this.msg = msg;
+//   this.name = 'deptExistsException';
+// }
+
+function addRole() {
+  inquirer.
+    prompt([
+      {
+          message: "Enter Title:",
+          type: "input",
+          name: "title"
+      }, 
+      {
+          message: "Enter Salary:",
+          type: "number",
+          name: "salary"
+      }, 
+      {
+          message: "Enter Department ID:",
+          type: "number",
+          name: "department_id"
+      }
+  ]).then((res) => {
+    let sql = `INSERT INTO role (title, salary, department_id) SET (?, ?, ?)`;
+    console.log(res);
+    db.query(sql, [{title: res.title, salary: res.salary, department_id: res.department_id}], (err, res) => {
+      if(err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+    })
+    console.log('Role added successfully!');
+    viewAllRoles();
+    startEmployeeTracker();
+  });
+
+}
