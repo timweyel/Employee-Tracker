@@ -144,11 +144,13 @@ function addDepartment(){
         message: "Enter the Department Name: "
       }
     ]).then((res) => {
-    let sql = `INSERT INTO department SET ?`;
-    db.query(sql, [{name: res.name}],(err, res) => {
+    const sql = `INSERT INTO department SET ?`;
+    db.query(sql, [{name: res.name}], (err, res) => {
       //TODO: try to put in some error handling here. add UNIQUE to schema. see error function below this function
       if(err) {
-        res.status(500).json({ error: err.message });
+        
+        console.log({res})
+        console.log({err})
         return;
       }
       console.log('Department added successfully!');
@@ -164,8 +166,8 @@ function addDepartment(){
 // }
 
 function addRole() {
-  inquirer.
-    prompt([
+  inquirer
+    .prompt([
       {
           message: "Enter Title:",
           type: "input",
@@ -177,22 +179,92 @@ function addRole() {
           name: "salary"
       }, 
       {
-          message: "Enter Department ID:",
+          message: "Enter Department Name:",
           type: "number",
-          name: "department_id"
+          name: "department"
       }
-  ]).then((res) => {
-    let sql = `INSERT INTO role (title, salary, department_id) SET (?, ?, ?)`;
-    console.log(res);
-    db.query(sql, [{title: res.title, salary: res.salary, department_id: res.department_id}], (err, res) => {
-      if(err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
-    })
-    console.log('Role added successfully!');
-    viewAllRoles();
-    startEmployeeTracker();
-  });
 
+      // “INSERT INTO employee SET ?“, title, salary, department_id);
+
+    ]).then(res=> {
+      let sql = `INSERT INTO role(title, salary, department_id) 
+      VALUES
+      ("${res.title}", 
+      "${res.salary}", 
+      (SELECT id FROM department WHERE name = "${res.department}"));`
+      console.log(res);
+      console.log("res.title: ", res.title);
+      console.log("res.salary: ", res.salary);
+      console.log("res.department: ", res.department);
+      db.query(sql, [{ title: res.title, salary: res.salary, department: res.department }], (err, results) => { // if this doesnt work use role as 2nd argument instead of [{title: res....
+      //console.log(res)
+      if(err) {
+        
+        console.log({res})
+        console.log({err})
+        return;
+      } 
+          else {
+          console.log('Role added successfully!');//HERE
+          }
+      })
+     console.log('Role added successfully!');//move this
+     viewAllRoles();
+
+
+// my old code
+//     ]).then((res) => {
+//     // let sql = `INSERT INTO role (title, salary, department_id) SET (?, ?, ?)`;
+//     const sql = `INSERT INTO role (title) SET ?`;
+//     console.log(res);
+//     // db.query(sql, [{title: res.title, salary: res.salary, department_id: res.department_id}], (err, res) => {
+//     db.query(sql, [{title: res.title}], (err, res) => {
+//       if(err) {
+//         res.status(500).json({ error: err.message });
+//         return;
+//       }
+//     })
+//     console.log('Role added successfully!');
+//     viewAllRoles();
+
+
+
+
+
+
+    //startEmployeeTracker();
+  });
 }
+
+// function addEmployee() {
+//   inquirer.
+//     prompt([
+//       {
+//           message: "Enter their first name:",
+//           type: "input",
+//           name: "first"
+//       }, 
+//       {
+//           message: "Enter their last name:",
+//           type: "input",
+//           name: "last"
+//       }, 
+//       {
+//           message: "Enter their manager's first and last name:",
+//           type: "input",
+//           name: "manager"
+//       }
+//   ]).then((res) => {
+//     const sql = `INSERT INTO role (first, last, manager) SET (?, ?, ?)`;
+//     console.log(res);
+//     db.query(sql, [{first_Name: res.first, last_Name: res.last, manager_id: res.manager}], (err, res) => {
+//       if(err) {
+//         res.status(500).json({ error: err.message });
+//         return;
+//       }
+//     })
+//     console.log('Role added successfully!');
+//     viewAllEmployees();
+//     startEmployeeTracker();
+//   });
+// }
