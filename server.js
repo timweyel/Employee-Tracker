@@ -210,29 +210,7 @@ function addRole() {
       })
      console.log('Role added successfully!');//move this
      viewAllRoles();
-
-
-// my old code
-//     ]).then((res) => {
-//     // let sql = `INSERT INTO role (title, salary, department_id) SET (?, ?, ?)`;
-//     const sql = `INSERT INTO role (title) SET ?`;
-//     console.log(res);
-//     // db.query(sql, [{title: res.title, salary: res.salary, department_id: res.department_id}], (err, res) => {
-//     db.query(sql, [{title: res.title}], (err, res) => {
-//       if(err) {
-//         res.status(500).json({ error: err.message });
-//         return;
-//       }
-//     })
-//     console.log('Role added successfully!');
-//     viewAllRoles();
-
-
-
-
-
-
-    //startEmployeeTracker();
+     startEmployeeTracker();
   });
 }
 
