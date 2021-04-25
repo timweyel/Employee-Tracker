@@ -39,7 +39,9 @@ function startEmployeeTracker() {
         "View All Employees",
         "Add Department",
         "Add Role",
-        "Add Employee"
+        "Add Employee",
+        "Update Employee Role",
+        "Exit"
       ]
     })
     .then(function(val) {
@@ -47,7 +49,7 @@ function startEmployeeTracker() {
       case "View All Departments":
         viewAllDepartments();
         break;
-      
+
       case "View All Roles":
         viewAllRoles();
         break;
@@ -63,19 +65,30 @@ function startEmployeeTracker() {
       case "Add Role":
         addRole();
         break;
-      
+
       case "Add Employee":
         addEmployee();
         break;
+
+      case "Update Employee Role":
+        updateEmployeeRole();
+        break;
+
+      case 'Exit':
+        db.end();
+        break;
      }
-    });
+
+    }).catch((err) => {
+      if(err) {
+        throw err;
+      }
+      });
 }
 
 
 // View All Departments
 function viewAllDepartments() {
-  console.log("All Departments");
-
   const sql = `SELECT id, name AS Department FROM department ORDER BY id ASC`;
 
   db.query(sql, (err, res) => {
@@ -83,6 +96,7 @@ function viewAllDepartments() {
       res.status(500).json({ error: err.message });
       return;
     }
+    console.log("All Departments:");
     console.table(res);
     startEmployeeTracker();
   }); 
@@ -90,13 +104,11 @@ function viewAllDepartments() {
 
 // // View All Roles
 function viewAllRoles() {
-  console.log("All Roles");
-
   const sql = `SELECT role.title AS Job_Title, 
-  role.id AS ID, 
+  role.id AS ID,
   department.name AS Department,
-  role.salary AS Salary 
-  FROM role LEFT JOIN department 
+  role.salary AS Salary
+  FROM role LEFT JOIN department
   ON department_id = department.id;`;
 
   db.query(sql, (err, res) => {
@@ -104,22 +116,21 @@ function viewAllRoles() {
       res.status(500).json({ error: err.message });
       return;
     }
+    console.log("All Roles:");
     console.table(res);
     startEmployeeTracker();
-  }); 
+  });
 };
 
 // View All Employees
 function viewAllEmployees() {
-  console.log("All Employees");
-
-  const sql = `SELECT 
-      employee.id, 
-      employee.first_name, 
-      employee.last_name, 
-      role.title, 
-      department.name AS department, 
-      role.salary, 
+  const sql = `SELECT
+      employee.id,
+      employee.first_name,
+      employee.last_name,
+      role.title,
+      department.name AS department,
+      role.salary,
       CONCAT(manager.first_name, ' ', manager.last_name) AS manager
     FROM employee
     LEFT JOIN role
@@ -134,6 +145,7 @@ function viewAllEmployees() {
       res.status(500).json({ error: err.message });
       return;
     }
+    console.log("All Employees:");
     console.table(res);
     startEmployeeTracker();
   });
@@ -152,9 +164,10 @@ function addDepartment(){
     db.query(sql, [{name: res.name}], (err, res) => {
       //TODO: try to put in some error handling here. add UNIQUE to schema. see error function below this function
       if(err) {
-        
-        console.log({res})
-        console.log({err})
+
+        console.log({res});
+        console.log({err});
+        addDepartment();
         return;
       }
       console.log('Department added successfully!');
@@ -176,12 +189,12 @@ function addRole() {
           message: "Enter Title:",
           type: "input",
           name: "title"
-      }, 
+      },
       {
           message: "Enter Salary:",
           type: "number",
           name: "salary"
-      }, 
+      },
       {
           message: "Enter Department Name:",
           type: "input",
@@ -199,18 +212,16 @@ function addRole() {
       // console.log("res.department: ", res.department);
       db.query(sql, [{ title: res.title, salary: res.salary, department: res.department }], (err, results) => { // if this doesnt work use role as 2nd argument instead of [{title: res....
 
-      if(err) {
-        console.log({res})
-        console.log({err})
-        return;
-      }
-          else {
-          console.log('Role added successfully!');
-          }
+        if(err) {
+          console.log({res});
+          console.log({err});
+          addRole();
+          return;
+        }
       })
-
-     viewAllRoles();
-     startEmployeeTracker();
+      console.log('Role added successfully!');
+      viewAllRoles();
+      startEmployeeTracker();
   });
 }
 
@@ -248,14 +259,92 @@ function addEmployee() {
       if(err) {
         console.log({res})
         console.log({err})
+        addEmployee();
         return;
       }
-          else {
-          console.log('Role added successfully!');
-          }
-      })
 
+    })
+    console.log('Employee added successfully!');
     viewAllEmployees();
     startEmployeeTracker();
   });
+}
+
+//UPDATE EMPLOYEE ROLE
+function updateEmployeeRole(){
+  const sql = `SELECT
+                  employee.id,
+                  employee.first_name,
+                  employee.last_name,
+                  role.title,
+                  department.name,
+                  role.salary,
+                  CONCAT(manager.first_name, ' ', manager.last_name) AS manager
+              FROM employee
+              JOIN role
+                  ON employee.role_id = role.id
+              JOIN department
+                  ON department.id = role.department_id
+              JOIN employee manager
+                  ON manager.id = employee.manager_id`;
+
+  db.query(sql,(err, res)=>{
+    if(err) {
+      throw err;
+    }
+    const employee = res.map(({ id, first_name, last_name }) => ({
+      value: id,
+       name: `${first_name} ${last_name}`
+    }));
+    console.table(res);
+    updateRole(employee);
+  });
+}
+
+function updateRole(employee){
+  const sql = `SELECT
+    role.id,
+    role.title,
+    role.salary
+    FROM role`;
+
+  db.query(sql,(err, res)=>{
+    if(err)throw err;
+    const roleChoices = res.map(({ id, title, salary }) => ({
+      value: id,
+      title: `${title}`,
+      salary: `${salary}`
+    }));
+    console.table(res);
+    getUpdatedRole(employee, roleChoices);
+  });
+}
+
+function getUpdatedRole(employee, roleChoices) {
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "employee",
+        message: `Which employee has a new role? `,
+        choices: employee
+      },
+      {
+        type: "list",
+        name: "role",
+        message: "Select a new role: ",
+        choices: roleChoices
+      },
+
+    ]).then((res)=>{
+      const sql = `UPDATE employee SET role_id = ? WHERE id = ?`
+      db.query(sql, [ res.role, res.employee ],(err, res)=>{
+        if(err) {
+          throw err;
+        }
+        console.log('Employee role updated successfully!')
+        viewAllEmployees();
+        startEmployeeTracker();
+      });
+    });
 }
