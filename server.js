@@ -38,7 +38,8 @@ function startEmployeeTracker() {
         "View All Roles",
         "View All Employees",
         "Add Department",
-        "Add Role"
+        "Add Role",
+        "Add Employee"
       ]
     })
     .then(function(val) {
@@ -63,6 +64,9 @@ function startEmployeeTracker() {
         addRole();
         break;
       
+      case "Add Employee":
+        addEmployee();
+        break;
      }
     });
 }
@@ -180,69 +184,78 @@ function addRole() {
       }, 
       {
           message: "Enter Department Name:",
-          type: "number",
+          type: "input",
           name: "department"
       }
-
-      // “INSERT INTO employee SET ?“, title, salary, department_id);
-
     ]).then(res=> {
-      let sql = `INSERT INTO role(title, salary, department_id) 
+      const sql = `INSERT INTO role(title, salary, department_id) 
       VALUES
-      ("${res.title}", 
-      "${res.salary}", 
+      ("${res.title}",
+      "${res.salary}",
       (SELECT id FROM department WHERE name = "${res.department}"));`
-      console.log(res);
-      console.log("res.title: ", res.title);
-      console.log("res.salary: ", res.salary);
-      console.log("res.department: ", res.department);
+      // console.log(res);
+      // console.log("res.title: ", res.title);
+      // console.log("res.salary: ", res.salary);
+      // console.log("res.department: ", res.department);
       db.query(sql, [{ title: res.title, salary: res.salary, department: res.department }], (err, results) => { // if this doesnt work use role as 2nd argument instead of [{title: res....
-      //console.log(res)
+
       if(err) {
-        
         console.log({res})
         console.log({err})
         return;
-      } 
+      }
           else {
-          console.log('Role added successfully!');//HERE
+          console.log('Role added successfully!');
           }
       })
-     console.log('Role added successfully!');//move this
+
      viewAllRoles();
      startEmployeeTracker();
   });
 }
 
-// function addEmployee() {
-//   inquirer.
-//     prompt([
-//       {
-//           message: "Enter their first name:",
-//           type: "input",
-//           name: "first"
-//       }, 
-//       {
-//           message: "Enter their last name:",
-//           type: "input",
-//           name: "last"
-//       }, 
-//       {
-//           message: "Enter their manager's first and last name:",
-//           type: "input",
-//           name: "manager"
-//       }
-//   ]).then((res) => {
-//     const sql = `INSERT INTO role (first, last, manager) SET (?, ?, ?)`;
-//     console.log(res);
-//     db.query(sql, [{first_Name: res.first, last_Name: res.last, manager_id: res.manager}], (err, res) => {
-//       if(err) {
-//         res.status(500).json({ error: err.message });
-//         return;
-//       }
-//     })
-//     console.log('Role added successfully!');
-//     viewAllEmployees();
-//     startEmployeeTracker();
-//   });
-// }
+function addEmployee() {
+  inquirer.
+    prompt([
+      {
+          message: "Enter their first name:",
+          type: "input",
+          name: "first"
+      },
+      {
+          message: "Enter their last name:",
+          type: "input",
+          name: "last"
+      },
+      {
+          message: "What is their role?",
+          type: "input",
+          name: "role"
+      },
+      {
+          message: "Enter their manager's first and last name:",
+          type: "input",
+          name: "manager"
+      }
+  ]).then((res) => {
+    console.log(res);
+    //const sql = `SELECT * FROM addEmployee`;
+    const sql = `INSERT INTO employee(first_name, last_name, role_id, manager_id)
+    VALUES
+      ("${res.first}", "${res.last}", (SELECT id FROM role WHERE title = "${res.role}" ), (SELECT id FROM (SELECT id FROM employee WHERE CONCAT(first_name," ",last_name) = "${res.manager}" ) AS tmptable))`;
+
+    db.query(sql, [{first_name: res.first, last_name: res.last, role: res.role, manager_id: res.manager}], (err, results) => {
+      if(err) {
+        console.log({res})
+        console.log({err})
+        return;
+      }
+          else {
+          console.log('Role added successfully!');
+          }
+      })
+
+    viewAllEmployees();
+    startEmployeeTracker();
+  });
+}
