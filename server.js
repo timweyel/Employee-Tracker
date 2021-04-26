@@ -14,15 +14,17 @@ const db = mysql.createConnection(
     user: 'root',
     // Your MySQL password
     password: 'password',
-    database: 'employee_tracker'    
+    database: 'employee_tracker'
   }
 );
 
 db.connect(function(err) {
   if (err) { 
-    throw err;
+    console.log({res});
+    console.log({err});
+    return;
   } else {
-  console.log(`Connected to the ${db.config.database} database.`)
+  console.log(`Connected to the ${db.config.database} database.`);
   startEmployeeTracker();
   }
 });
@@ -44,8 +46,8 @@ function startEmployeeTracker() {
         "Exit"
       ]
     })
-    .then(function(val) {
-      switch (val.choice){
+    .then(function(res) {
+      switch (res.choice){
       case "View All Departments":
         viewAllDepartments();
         break;
@@ -93,7 +95,8 @@ function viewAllDepartments() {
 
   db.query(sql, (err, res) => {
     if (err) {
-      res.status(500).json({ error: err.message });
+      console.log({res});
+      console.log({err});
       return;
     }
     console.log("All Departments:");
@@ -104,7 +107,7 @@ function viewAllDepartments() {
 
 // // View All Roles
 function viewAllRoles() {
-  const sql = `SELECT role.title AS Job_Title, 
+  const sql = `SELECT role.title AS Job_Title,
   role.id AS ID,
   department.name AS Department,
   role.salary AS Salary
@@ -113,7 +116,8 @@ function viewAllRoles() {
 
   db.query(sql, (err, res) => {
     if (err) {
-      res.status(500).json({ error: err.message });
+      console.log({res});
+      console.log({err});
       return;
     }
     console.log("All Roles:");
@@ -142,7 +146,8 @@ function viewAllEmployees() {
 
   db.query(sql, (err, res) => {
     if (err) {
-      res.status(500).json({ error: err.message });
+      console.log({res});
+      console.log({err});
       return;
     }
     console.log("All Employees:");
@@ -167,7 +172,7 @@ function addDepartment(){
 
         console.log({res});
         console.log({err});
-        addDepartment();
+        //addDepartment();
         return;
       }
       console.log('Department added successfully!');
@@ -183,6 +188,18 @@ function addDepartment(){
 // }
 
 function addRole() {
+  const departmentsSQL = `SELECT name FROM department`;
+  let departments = [];
+
+  db.query(departmentsSQL, (err, res) => {
+    if (err) {
+      console.log(err);
+    }
+    res.forEach(departmentsSQL => {
+      departments.push(departmentsSQL.name);
+    })
+  });
+
   inquirer
     .prompt([
       {
@@ -196,26 +213,24 @@ function addRole() {
           name: "salary"
       },
       {
-          message: "Enter Department Name:",
-          type: "input",
-          name: "department"
+          message: "Select Department Name:",
+          type: "list",
+          name: "department",
+          choices: departments
       }
     ]).then(res=> {
-      const sql = `INSERT INTO role(title, salary, department_id) 
+      const sql = `INSERT INTO role(title, salary, department_id)
       VALUES
       ("${res.title}",
       "${res.salary}",
       (SELECT id FROM department WHERE name = "${res.department}"));`
-      // console.log(res);
-      // console.log("res.title: ", res.title);
-      // console.log("res.salary: ", res.salary);
-      // console.log("res.department: ", res.department);
+
       db.query(sql, [{ title: res.title, salary: res.salary, department: res.department }], (err, results) => { // if this doesnt work use role as 2nd argument instead of [{title: res....
 
         if(err) {
           console.log({res});
           console.log({err});
-          addRole();
+          //addRole();
           return;
         }
       })
@@ -225,7 +240,35 @@ function addRole() {
   });
 }
 
+
+
 function addEmployee() {
+  const roleSQL = `SELECT title FROM role`;
+  let rolesArray = [];
+
+  db.query(roleSQL, (err, res) => {
+    if (err) {
+      console.log(err);
+    }
+    res.forEach(role => {
+      rolesArray.push(role.title);
+    })
+  });
+
+  const managerSQL = `SELECT first_name, last_name FROM employee`;
+  let employeesArray = [];
+
+  db.query(managerSQL, (err, res) => {
+    if(err) {
+        console.log(err);
+    }
+    res.forEach( manager => {
+        const fullName = `${manager.first_name} ${manager.last_name}`
+        employeesArray.push(fullName);
+    })
+  });
+
+
   inquirer.
     prompt([
       {
@@ -240,17 +283,18 @@ function addEmployee() {
       },
       {
           message: "What is their role?",
-          type: "input",
-          name: "role"
+          type: "list",
+          name: "role",
+          choices: rolesArray
       },
       {
-          message: "Enter their manager's first and last name:",
-          type: "input",
-          name: "manager"
+          message: "Select their manager:",
+          type: "list",
+          name: "manager",
+          choices: employeesArray
       }
   ]).then((res) => {
-    console.log(res);
-    //const sql = `SELECT * FROM addEmployee`;
+
     const sql = `INSERT INTO employee(first_name, last_name, role_id, manager_id)
     VALUES
       ("${res.first}", "${res.last}", (SELECT id FROM role WHERE title = "${res.role}" ), (SELECT id FROM (SELECT id FROM employee WHERE CONCAT(first_name," ",last_name) = "${res.manager}" ) AS tmptable))`;
@@ -290,11 +334,12 @@ function updateEmployeeRole(){
 
   db.query(sql,(err, res)=>{
     if(err) {
-      throw err;
+      console.log({res})
+      console.log({err})
     }
     const employee = res.map(({ id, first_name, last_name }) => ({
       value: id,
-       name: `${first_name} ${last_name}`
+      name: `${first_name} ${last_name}`
     }));
     console.table(res);
     updateRole(employee);
@@ -302,14 +347,17 @@ function updateEmployeeRole(){
 }
 
 function updateRole(employee){
-  const sql = `SELECT
+  const sql = `SELECT 
     role.id,
     role.title,
     role.salary
     FROM role`;
 
   db.query(sql,(err, res)=>{
-    if(err)throw err;
+    if(err) {
+      console.log({res})
+      console.log({err})
+    }
     const roleChoices = res.map(({ id, title, salary }) => ({
       value: id,
       title: `${title}`,
@@ -337,10 +385,12 @@ function getUpdatedRole(employee, roleChoices) {
       },
 
     ]).then((res)=>{
-      const sql = `UPDATE employee SET role_id = ? WHERE id = ?`
+      const sql = `UPDATE employee SET role_id = ? WHERE id = ?`;
+
       db.query(sql, [ res.role, res.employee ],(err, res)=>{
         if(err) {
-          throw err;
+          console.log({res})
+          console.log({err})
         }
         console.log('Employee role updated successfully!')
         viewAllEmployees();
