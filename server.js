@@ -89,23 +89,23 @@ function startEmployeeTracker() {
 }
 
 
-// View All Departments
+// VIEW ALL DEPARMENTS
 function viewAllDepartments() {
   const sql = `SELECT id, name AS Department FROM department ORDER BY id ASC`;
 
   db.query(sql, (err, res) => {
     if (err) {
-      console.log({res});
-      console.log({err});
+      console.log({ res });
+      console.log({ err });
       return;
     }
     console.log("All Departments:");
     console.table(res);
     startEmployeeTracker();
-  }); 
-};
+  });
+}
 
-// // View All Roles
+// VIEW ALL ROLES
 function viewAllRoles() {
   const sql = `SELECT role.title AS Job_Title,
   role.id AS ID,
@@ -126,7 +126,7 @@ function viewAllRoles() {
   });
 };
 
-// View All Employees
+// VIEW ALL EMPLOYEES
 function viewAllEmployees() {
   const sql = `SELECT
       employee.id,
@@ -156,6 +156,7 @@ function viewAllEmployees() {
   });
 };
 
+// ADD DEPARTMENT
 function addDepartment(){
   inquirer
     .prompt([
@@ -241,7 +242,7 @@ function addRole() {
 }
 
 
-
+// ADD EMPLOYEE
 function addEmployee() {
   const roleSQL = `SELECT title FROM role`;
   let rolesArray = [];
