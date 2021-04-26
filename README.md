@@ -5,6 +5,8 @@
 
 # Employee Tracker
 
+[Demo Video](https://drive.google.com/file/d/1Iy4FNys3KytESzhmXG_V7fIgua0LK9CB/view)
+
 ## This app can manage the departments and roles of your employees
 
 ### Table of Contents
@@ -14,9 +16,6 @@
 4. [Contribution](#contribution)
 5. [Testing](#testing)
 6. [Questions](#questions)
-
-[Demo Video](https://drive.google.com/file/d/1Iy4FNys3KytESzhmXG_V7fIgua0LK9CB/view)
-
 
 ## Usage
 This app is used on the command line to view, add, and edit employee information.
